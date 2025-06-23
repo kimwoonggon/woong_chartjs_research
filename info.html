@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLM 파인튜닝 완전 정복: SFT에서 강화학습까지</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        :root {
+            --primary: #FF4E50;
+            --secondary: #FC913A;
+            --tertiary: #F9D423;
+            --accent: #00A896;
+            --dark-text: #2C3E50;
+            --light-bg: #F8F9FA;
+            --white: #FFFFFF;
+        }
+        .bg-primary { background-color: var(--primary); }
+        .bg-secondary { background-color: var(--secondary); }
+        .bg-tertiary { background-color: var(--tertiary); }
+        .bg-accent { background-color: var(--accent); }
+        .bg-light { background-color: var(--light-bg); }
+        .text-primary { color: var(--primary); }
+        .text-secondary { color: var(--secondary); }
+        .text-dark { color: var(--dark-text); }
+        .border-primary { border-color: var(--primary); }
+        .gradient-text {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light text-dark">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center my-12">
+            <h1 class="text-4xl md:text-6xl font-extrabold gradient-text mb-4">VLM 파인튜닝 완전 정복</h1>
+            <p class="text-lg md:text-2xl text-dark max-w-3xl mx-auto">지도 파인튜닝(SFT)의 한계를 넘어, 지식 주입과 고차원적 추론을 위한 강화학습(RL)의 부상까지. VLM의 잠재력을 극대화하는 핵심 전략을 한눈에 살펴보세요.</p>
+        </header>
+
+        <main class="space-y-16">
+
+            <section id="sft-spectrum" class="bg-white p-8 rounded-2xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-2">1. 지도 파인튜닝(SFT)의 스펙트럼</h2>
+                <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">SFT는 새로운 지식을 창조하기보다, 모델이 가진 기존 역량을 특정 방향으로 '정렬'하고 '전문화'하는 데 강점이 있습니다.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-accent mb-2">SFT의 역할: 스타일과 기술의 전문화</h3>
+                            <p class="text-gray-700">SFT는 모델의 응답 스타일(어조, 형식)을 교정하거나, 특정 과업(의료 영상 분석, 코드 생성)에 필요한 기술을 강화하는 데 매우 효과적입니다. 기존 능력을 특정 도메인에 맞게 연마하는 과정입니다.</p>
+                        </div>
+                        <div class="bg-primary/10 p-6 rounded-xl">
+                            <h4 class="text-lg font-bold text-primary mb-2">핵심 통찰: 인식 편향의 조정</h4>
+                            <p class="text-gray-800">SFT는 모델의 근본적인 '인식 방식'도 바꿀 수 있습니다. 예를 들어, 질감(texture)보다 형태(shape) 중심으로 객체를 인식하도록 VLM을 훈련시킬 수 있습니다.</p>
+                            <div class="flex items-center justify-around mt-4">
+                                <div class="text-center">
+                                    <p class="text-4xl font-extrabold text-primary">49%</p>
+                                    <p class="text-sm font-medium text-gray-600">SFT 이전</p>
+                                </div>
+                                <div class="text-5xl font-light text-primary/50">→</div>
+                                <div class="text-center">
+                                    <p class="text-4xl font-extrabold text-accent">72%</p>
+                                    <p class="text-sm font-medium text-gray-600">SFT 이후</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-center text-gray-500 mt-2">형태 편향(Shape Bias) 수치 변화</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="chart-container h-64 md:h-[300px]">
+                            <canvas id="sftCapabilitiesChart"></canvas>
+                        </div>
+                         <p class="text-center text-sm text-gray-600 mt-2">SFT는 '스타일'과 '기술' 교정에 탁월하지만, '지식' 주입에는 한계가 명확합니다.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="knowledge-injection-limit" class="text-center">
+                <h2 class="text-3xl font-bold mb-2">2. 지식 주입의 함정: SFT는 만능이 아니다</h2>
+                <p class="text-gray-600 mb-8 max-w-2xl mx-auto">모델에 없는 새로운 사실이나 시각적 지식을 SFT로 주입하려는 시도는 '환각(Hallucination)' 현상을 유발할 뿐입니다. 목표에 맞는 올바른 도구를 선택해야 합니다.</p>
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                        <div class="p-6 bg-gray-100 rounded-xl w-full md:w-auto">
+                            <p class="text-lg font-semibold text-dark">당신의 목표는?</p>
+                        </div>
+                        <div class="text-4xl font-light text-secondary hidden md:block">→</div>
+                        <div class="w-px h-8 bg-secondary/50 md:hidden"></div>
+                        
+                        <div class="flex flex-col md:flex-row gap-4 w-full">
+                            <div class="border-2 border-dashed border-red-400 p-6 rounded-xl flex-1 text-left">
+                                <h3 class="font-bold text-red-600">새로운 지식/사실 주입</h3>
+                                <p class="text-sm text-gray-700 mt-2">"이전에 본 적 없는 제품 'X'를 인식하게 만들고 싶다."</p>
+                                <div class="mt-4 p-3 bg-red-100 rounded-lg text-center">
+                                    <p class="font-bold text-red-800">잘못된 선택: SFT</p>
+                                    <p class="text-xs text-red-700">높은 확률로 환각 발생</p>
+                                </div>
+                            </div>
+                            <div class="border-2 border-dashed border-green-500 p-6 rounded-xl flex-1 text-left">
+                                <h3 class="font-bold text-green-700">스타일/기술 전문화</h3>
+                                <p class="text-sm text-gray-700 mt-2">"이미지를 분석하고 결과를 항상 JSON 형식으로 출력하게 만들고 싶다."</p>
+                                <div class="mt-4 p-3 bg-green-100 rounded-lg text-center">
+                                    <p class="font-bold text-green-800">올바른 선택: SFT</p>
+                                    <p class="text-xs text-green-700">기존 능력의 활용</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                         <h3 class="text-xl font-bold text-accent mb-4">지식 주입을 위한 올바른 접근법</h3>
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                             <div class="bg-light p-4 rounded-lg">
+                                 <h4 class="font-bold text-dark">지속적 사전학습 (CPT)</h4>
+                                 <p class="text-sm text-gray-600">대규모 도메인 특화 데이터로 모델을 추가 학습시켜 핵심 지식 기반을 실질적으로 확장합니다.</p>
+                             </div>
+                             <div class="bg-light p-4 rounded-lg">
+                                 <h4 class="font-bold text-dark">검색 증강 생성 (RAG)</h4>
+                                 <p class="text-sm text-gray-600">추론 시점에 외부 DB에서 최신/전문 정보를 검색하여 답변에 활용합니다. 모델 파라미터를 변경하지 않습니다.</p>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="catastrophic-forgetting" class="bg-white p-8 rounded-2xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-2">3. 파국적 망각과의 전쟁</h2>
+                <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">새로운 것을 배우면서 기존 지식을 잊어버리는 '파국적 망각'은 VLM 파인튜닝의 가장 큰 장애물입니다. 이를 막기 위한 효과적인 전략들을 소개합니다.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-2">
+                        <h3 class="text-xl font-bold text-accent mb-4">첫 번째 방어선: PEFT (파라미터 효율적 파인튜닝)</h3>
+                        <p class="text-gray-700 mb-4">모델의 대부분(99% 이상) 파라미터를 '고정(freeze)'하고, 극소수만 업데이트하여 지식의 덮어쓰기를 최소화합니다. LoRA/QLoRA가 대표적입니다.</p>
+                         <div class="chart-container h-56 md:h-[250px]">
+                            <canvas id="peftEffectChart"></canvas>
+                        </div>
+                        <p class="text-center text-sm text-gray-600 mt-2">PEFT는 훈련 가능한 파라미터 수를 극적으로 줄여 망각을 완화합니다.</p>
+                    </div>
+                    <div class="lg:col-span-3">
+                        <h3 class="text-xl font-bold text-accent mb-4">고급 망각 완화 전략 비교</h3>
+                        <div class="space-y-3">
+                            <div class="bg-light p-4 rounded-lg">
+                                <h4 class="font-bold text-dark">LoRA/QLoRA (PEFT)</h4>
+                                <p class="text-sm text-gray-600"><strong>작동 방식:</strong> 가중치 업데이트를 저랭크 행렬로 근사. <strong>장점:</strong> 높은 효율, 구현 용이. <strong>단점:</strong> 완벽한 망각 방지는 아님. <strong>용도:</strong> 가장 보편적인 범용 파인튜닝.</p>
+                            </div>
+                            <div class="bg-light p-4 rounded-lg">
+                                <h4 class="font-bold text-dark">PROOF (아키텍처 확장)</h4>
+                                <p class="text-sm text-gray-600"><strong>작동 방식:</strong> 새 과업마다 새 모듈 추가. <strong>장점:</strong> 설계상 망각 원천 차단. <strong>단점:</strong> 모델 크기 지속 증가. <strong>용도:</strong> 순차적으로 여러 과업을 학습할 때.</p>
+                            </div>
+                            <div class="bg-light p-4 rounded-lg">
+                                <h4 class="font-bold text-dark">GIFT (리허설)</h4>
+                                <p class="text-sm text-gray-600"><strong>작동 방식:</strong> 합성 데이터로 과거 지식 복습. <strong>장점:</strong> 원본 데이터 불필요. <strong>단점:</strong> 별도 생성 모델 필요. <strong>용도:</strong> 과거 데이터 접근 불가 시.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="reinforcement-learning">
+                <h2 class="text-3xl font-bold text-center mb-2">4. 모방을 넘어: 강화학습(RL)의 부상</h2>
+                <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">SFT가 정답을 '모방'하는 학습이라면, RL은 성공적인 '결과'를 통해 학습합니다. 이는 복잡한 추론과 일반화 능력을 여는 열쇠입니다.</p>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-8 rounded-2xl shadow-lg">
+                        <h3 class="font-bold text-2xl mb-4 text-center text-secondary">SFT: 모방에 의한 학습</h3>
+                        <p class="text-center text-gray-700">정적 데이터셋의 입력-출력 쌍을 최대한 똑같이 복제하도록 훈련합니다. 정해진 패턴에 과적합될 위험이 있습니다.</p>
+                        <div class="mt-6 p-4 border-2 border-dashed border-secondary rounded-xl text-center">
+                            <p class="text-lg">"이 이미지에 대한 정답 캡션은 'A'입니다. 'A'라고 말하도록 배우세요."</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-8 rounded-2xl shadow-lg">
+                         <h3 class="font-bold text-2xl mb-4 text-center text-accent">RL: 결과에 의한 학습</h3>
+                        <p class="text-center text-gray-700">모델의 행동(응답)이 좋은 결과를 낳으면 '보상'을 주어, 성공 전략을 스스로 탐색하게 합니다.</p>
+                         <div class="mt-6 p-4 border-2 border-dashed border-accent rounded-xl text-center">
+                            <p class="text-lg">"여러 답변을 생성해 보세요. 'A'라는 답변이 가장 높은 보상을 받았습니다. 앞으로 이런 답변을 하세요."</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="success-cases" class="bg-white p-8 rounded-2xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-8">5. RL 기반 파인튜닝 성공 사례</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-accent mb-2">사례 1: 의료 영상 분석 (MedVLM-R1)</h3>
+                        <p class="text-gray-700 mb-4">신뢰성이 중요한 의료 분야에서, RL로 훈련된 소형 모델이 SFT로 훈련된 초대형 모델의 성능을 압도했습니다. 이는 RL이 창발적 추론 능력을 이끌어냄을 보여줍니다.</p>
+                        <div class="chart-container h-64 md:h-[300px]">
+                            <canvas id="medicalPerfChart"></canvas>
+                        </div>
+                        <p class="text-center text-sm text-gray-600 mt-2">VQA-RAD 벤치마크 정확도 비교</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-accent mb-2">사례 2: 고차원적 시각적 이해 (VLM-R1)</h3>
+                        <p class="text-gray-700 mb-4">복잡한 객체 탐지 과업에서 RL 모델은 SFT 모델보다 훨씬 뛰어난 일반화 성능을 보였습니다. 과업의 '원리'를 내재화했기 때문입니다.</p>
+                        <div class="chart-container h-64 md:h-[300px]">
+                            <canvas id="reasoningPerfChart"></canvas>
+                        </div>
+                        <p class="text-center text-sm text-gray-600 mt-2">LISA-Grounding 벤치마크 점수 비교</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="decision-framework" class="text-center">
+                <h2 class="text-3xl font-bold mb-2">6. 최종 의사결정 프레임워크</h2>
+                <p class="text-gray-600 mb-8 max-w-2xl mx-auto">당신의 VLM 프로젝트에 가장 적합한 방법론은 무엇일까요? 이 흐름도를 따라 최적의 경로를 찾아보세요.</p>
+                
+                <div class="bg-white p-8 rounded-2xl shadow-lg text-left">
+                    <div class="space-y-6">
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-primary text-white text-2xl font-bold rounded-full flex items-center justify-center">1</div>
+                            <div>
+                                <h3 class="text-xl font-bold">목표 정의: 무엇을 원하십니까?</h3>
+                                <p class="text-gray-600">파인튜닝의 최종 목표를 명확히 하는 것이 첫 단계입니다.</p>
+                            </div>
+                        </div>
+
+                        <div class="pl-16 relative">
+                             <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                             <div class="space-y-8">
+                                <div class="relative pl-8">
+                                    <div class="absolute left-[-18px] top-1/2 -translate-y-1/2 w-8 h-8 bg-secondary text-white rounded-full flex items-center justify-center font-bold">A</div>
+                                    <h4 class="font-bold text-secondary text-lg">스타일, 형식, 편향 변경</h4>
+                                    <p class="text-gray-600">모델의 응답 톤, JSON 출력 형식, 인식 편향 등을 조정.</p>
+                                    <p class="mt-2 font-bold text-accent">→ 추천: SFT + PEFT (LoRA/QLoRA)</p>
+                                </div>
+                                 <div class="relative pl-8">
+                                    <div class="absolute left-[-18px] top-1/2 -translate-y-1/2 w-8 h-8 bg-secondary text-white rounded-full flex items-center justify-center font-bold">B</div>
+                                    <h4 class="font-bold text-secondary text-lg">특정 기술 전문화</h4>
+                                    <p class="text-gray-600">기존 지식을 바탕으로 특정 과업(문서 분석 등)의 기술을 연마.</p>
+                                    <p class="mt-2 font-bold text-accent">→ 추천: SFT + PEFT</p>
+                                </div>
+                                <div class="relative pl-8">
+                                    <div class="absolute left-[-18px] top-1/2 -translate-y-1/2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center font-bold">C</div>
+                                    <h4 class="font-bold text-red-500 text-lg">새로운 지식 주입</h4>
+                                    <p class="text-gray-600">사전학습에 없던 새로운 개념, 사실, 객체를 학습.</p>
+                                    <p class="mt-2 font-bold text-accent">→ 추천: CPT (영구적) 또는 RAG (동적)</p>
+                                </div>
+                                 <div class="relative pl-8">
+                                    <div class="absolute left-[-18px] top-1/2 -translate-y-1/2 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold">D</div>
+                                    <h4 class="font-bold text-purple-500 text-lg">복잡한 추론/일반화 능력</h4>
+                                    <p class="text-gray-600">다단계 논리, 의사결정, 도메인 변화에 대한 강건함 요구.</p>
+                                    <p class="mt-2 font-bold text-accent">→ 추천: 강화학습 (RL)</p>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const CHART_COLORS = {
+                primary: 'rgba(255, 78, 80, 0.8)',
+                primary_bg: 'rgba(255, 78, 80, 0.2)',
+                secondary: 'rgba(252, 145, 58, 0.8)',
+                secondary_bg: 'rgba(252, 145, 58, 0.2)',
+                accent: 'rgba(0, 168, 150, 0.8)',
+                accent_bg: 'rgba(0, 168, 150, 0.2)',
+                dark_text: '#2C3E50',
+            };
+            
+            const wrapLabel = (label, maxWidth) => {
+                if (typeof label !== 'string' || label.length <= maxWidth) {
+                    return label;
+                }
+                const words = label.split(' ');
+                const lines = [];
+                let currentLine = '';
+                for (const word of words) {
+                    if ((currentLine + word).length > maxWidth && currentLine.length > 0) {
+                        lines.push(currentLine.trim());
+                        currentLine = '';
+                    }
+                    currentLine += word + ' ';
+                }
+                lines.push(currentLine.trim());
+                return lines;
+            };
+
+            const multiLineTooltipTitle = (tooltipItems) => {
+                const item = tooltipItems[0];
+                let label = item.chart.data.labels[item.dataIndex];
+                if (Array.isArray(label)) {
+                    return label.join(' ');
+                }
+                return label;
+            };
+
+            const defaultChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: CHART_COLORS.dark_text,
+                            font: {
+                                family: "'Noto Sans KR', sans-serif",
+                                size: 14,
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: multiLineTooltipTitle
+                        },
+                        titleFont: {
+                            family: "'Noto Sans KR', sans-serif",
+                        },
+                        bodyFont: {
+                            family: "'Noto Sans KR', sans-serif",
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: CHART_COLORS.dark_text,
+                             font: {
+                                family: "'Noto Sans KR', sans-serif",
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: CHART_COLORS.dark_text,
+                            font: {
+                                family: "'Noto Sans KR', sans-serif",
+                            }
+                        },
+                        grid: {
+                            color: '#e0e0e0'
+                        }
+                    }
+                }
+            };
+            
+            new Chart(document.getElementById('sftCapabilitiesChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['스타일/형식 교정', '특정 기술 전문화', '새로운 지식 주입'],
+                    datasets: [{
+                        label: 'SFT 효과성',
+                        data: [45, 40, 15],
+                        backgroundColor: [CHART_COLORS.accent, CHART_COLORS.secondary, CHART_COLORS.primary_bg],
+                        borderColor: [CHART_COLORS.accent, CHART_COLORS.secondary, 'rgba(255, 78, 80, 0.4)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { ...defaultChartOptions, scales: { x: { display: false }, y: { display: false } } }
+            });
+            
+            new Chart(document.getElementById('peftEffectChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['전체 파인튜닝', 'PEFT (LoRA/QLoRA)'],
+                    datasets: [{
+                        label: '훈련 가능한 파라미터 수 (상대적)',
+                        data: [100, 1],
+                        backgroundColor: [CHART_COLORS.primary_bg, CHART_COLORS.accent_bg],
+                        borderColor: [CHART_COLORS.primary, CHART_COLORS.accent],
+                        borderWidth: 2
+                    }]
+                },
+                options: {...defaultChartOptions, indexAxis: 'y' }
+            });
+
+            new Chart(document.getElementById('medicalPerfChart'), {
+                type: 'bar',
+                data: {
+                    labels: [wrapLabel('Qwen2VL-72B (SFT)', 16), 'MedVLM-R1 (2B, RL)'],
+                    datasets: [{
+                        label: '정확도 (%)',
+                        data: [69.6, 76.8],
+                        backgroundColor: [CHART_COLORS.secondary_bg, CHART_COLORS.accent_bg],
+                        borderColor: [CHART_COLORS.secondary, CHART_COLORS.accent],
+                        borderWidth: 2
+                    }]
+                },
+                options: { ...defaultChartOptions, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+
+            new Chart(document.getElementById('reasoningPerfChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['SFT Baseline (3B)', 'VLM-R1 (3B, RL)'],
+                    datasets: [{
+                        label: '점수',
+                        data: [54.82, 63.16],
+                        backgroundColor: [CHART_COLORS. secondary_bg, CHART_COLORS.accent_bg],
+                        borderColor: [CHART_COLORS.secondary, CHART_COLORS.accent],
+                        borderWidth: 2
+                    }]
+                },
+                options: { ...defaultChartOptions, scales: { y: { beginAtZero: true, max: 70 } } }
+            });
+
+        });
+    </script>
+</body>
+</html>
